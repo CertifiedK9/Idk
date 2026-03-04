@@ -1,0 +1,295 @@
+
+clan-system/
+├─ server.js
+├─ package.json
+├─ public/
+│  ├─ index.html
+│  ├─ music.mp3
+│  └─ style.css{
+      "name": "clan-system",
+        "version": "1.0.0",
+          "description": "Clan system with rankings, auction, chat and music",
+            "main": "server.js",
+              "scripts": {
+                  "start": "node server.js"
+                    },
+                      "dependencies": {
+                          "express": "^4.18.2",
+                              "mongoose": "^7.6.0",
+                                  "socket.io": "^4.7.2"
+                                    }
+                                    }<!DOCTYPE html>
+                                    <html>
+                                    <head>
+                                      <title>Clan System</title>
+                                        <link rel="stylesheet" href="style.css">
+                                          <script src="/socket.io/socket.io.js"></script>
+                                          </head>
+                                          <body>
+
+                                          <h1>🔥 Clan Auction System 🔥</h1>
+
+                                          <!-- Register -->
+                                          <div>
+                                            <h2>Register</h2>
+                                              <input id="username" placeholder="Username">
+                                                <button onclick="register()">Register</button>
+                                                </div>
+
+                                                <!-- Leaderboard -->
+                                                <div>
+                                                  <h2>Leaderboard</h2>
+                                                    <button onclick="loadLeaderboard()">Load</button>
+                                                      <ul id="leaderboard"></ul>
+                                                      </div>
+
+                                                      <!-- Clan -->
+                                                      <div>
+                                                        <h2>Create Clan</h2>
+                                                          <input id="clanName" placeholder="Clan Name">
+                                                            <button onclick="createClan()">Create</button>
+                                                            </div>
+
+                                                            <div>
+                                                              <h2>Join Clan</h2>
+                                                                <input id="joinClanName" placeholder="Clan Name">
+                                                                  <input id="joinUsername" placeholder="Username">
+                                                                    <button onclick="joinClan()">Join</button>
+                                                                    </div>
+
+                                                                    <!-- Auction -->
+                                                                    <div>
+                                                                      <h2>Create Auction</h2>
+                                                                        <input id="item" placeholder="Item Name">
+                                                                          <button onclick="createAuction()">Create</button>
+                                                                          </div>
+
+                                                                          <div>
+                                                                            <h2>Place Bid</h2>
+                                                                              <input id="bidAuctionId" placeholder="Auction ID">
+                                                                                <input id="bidUsername" placeholder="Username">
+                                                                                  <input id="bidAmount" placeholder="Bid Amount">
+                                                                                    <button onclick="placeBid()">Bid</button>
+                                                                                    </div>
+
+                                                                                    <!-- Live Chat -->
+                                                                                    <div>
+                                                                                      <h2>Live Chat</h2>
+                                                                                        <input id="chatInput" placeholder="Type a message">
+                                                                                          <button onclick="sendMessage()">Send</button>
+                                                                                            <ul id="messages"></ul>
+                                                                                            </div>
+
+                                                                                            <!-- Background Music -->
+                                                                                            <audio id="bgMusic" loop>
+                                                                                              <source src="music.mp3" type="audio/mpeg">
+                                                                                              </audio>
+                                                                                              <button onclick="toggleMusic()">🎵 Toggle Music</button>
+
+                                                                                              <script>
+                                                                                              const socket = io();
+                                                                                              const music = document.getElementById("bgMusic");
+                                                                                              music.volume = 0.5;
+
+                                                                                              // Autoplay after first click
+                                                                                              document.addEventListener("click", function startMusic() {
+                                                                                                music.play();
+                                                                                                  document.removeEventListener("click", startMusic);
+                                                                                                  });
+
+                                                                                                  function toggleMusic() {
+                                                                                                    if (music.paused) music.play();
+                                                                                                      else music.pause();
+                                                                                                      }
+
+                                                                                                      // ==================== FUNCTIONS ====================
+
+                                                                                                      function register() {
+                                                                                                        fetch("/register", {
+                                                                                                            method: "POST",
+                                                                                                                headers: {"Content-Type":"application/json"},
+                                                                                                                    body: JSON.stringify({ username: username.value })
+                                                                                                                      });
+                                                                                                                      }
+
+                                                                                                                      function loadLeaderboard() {
+                                                                                                                        fetch("/leaderboard")
+                                                                                                                            .then(res => res.json())
+                                                                                                                                .then(data => {
+                                                                                                                                      leaderboard.innerHTML = "";
+                                                                                                                                            data.forEach(u => leaderboard.innerHTML += `<li>${u.username} - ${u.points}</li>`);
+                                                                                                                                                });
+                                                                                                                                                }
+
+                                                                                                                                                function createClan() {
+                                                                                                                                                  fetch("/clan", {
+                                                                                                                                                      method: "POST",
+                                                                                                                                                          headers: {"Content-Type":"application/json"},
+                                                                                                                                                              body: JSON.stringify({ name: clanName.value })
+                                                                                                                                                                });
+                                                                                                                                                                }
+
+                                                                                                                                                                function joinClan() {
+                                                                                                                                                                  fetch("/clan/join", {
+                                                                                                                                                                      method: "POST",
+                                                                                                                                                                          headers: {"Content-Type":"application/json"},
+                                                                                                                                                                              body: JSON.stringify({ clan: joinClanName.value, username: joinUsername.value })
+                                                                                                                                                                                });
+                                                                                                                                                                                }
+
+                                                                                                                                                                                function createAuction() {
+                                                                                                                                                                                  fetch("/auction", {
+                                                                                                                                                                                      method: "POST",
+                                                                                                                                                                                          headers: {"Content-Type":"application/json"},
+                                                                                                                                                                                              body: JSON.stringify({ item: item.value })
+                                                                                                                                                                                                });
+                                                                                                                                                                                                }
+
+                                                                                                                                                                                                function placeBid() {
+                                                                                                                                                                                                  fetch("/bid", {
+                                                                                                                                                                                                      method: "POST",
+                                                                                                                                                                                                          headers: {"Content-Type":"application/json"},
+                                                                                                                                                                                                              body: JSON.stringify({
+                                                                                                                                                                                                                    id: bidAuctionId.value,
+                                                                                                                                                                                                                          username: bidUsername.value,
+                                                                                                                                                                                                                                amount: parseInt(bidAmount.value)
+                                                                                                                                                                                                                                    })
+                                                                                                                                                                                                                                      });
+                                                                                                                                                                                                                                      }
+
+                                                                                                                                                                                                                                      function sendMessage() {
+                                                                                                                                                                                                                                        socket.emit("chatMessage", chatInput.value);
+                                                                                                                                                                                                                                        }
+
+                                                                                                                                                                                                                                        socket.on("chatMessage", msg => {
+                                                                                                                                                                                                                                          messages.innerHTML += `<li>${msg}</li>`;
+                                                                                                                                                                                                                                          });
+                                                                                                                                                                                                                                          </script>
+
+                                                                                                                                                                                                                                          </body>
+                                                                                                                                                                                                                                          </html>const express = require("express");
+                                                                                                                                                                                                                                          const mongoose = require("mongoose");
+                                                                                                                                                                                                                                          const http = require("http");
+                                                                                                                                                                                                                                          const { Server } = require("socket.io");
+
+                                                                                                                                                                                                                                          const app = express();
+                                                                                                                                                                                                                                          const server = http.createServer(app);
+                                                                                                                                                                                                                                          const io = new Server(server);
+
+                                                                                                                                                                                                                                          app.use(express.json());
+                                                                                                                                                                                                                                          app.use(express.static("public"));
+
+                                                                                                                                                                                                                                          // Connect to local MongoDB
+                                                                                                                                                                                                                                          mongoose.connect("mongodb://127.0.0.1:27017/clanSystem");
+
+                                                                                                                                                                                                                                          // ==================== MODELS ====================
+
+                                                                                                                                                                                                                                          // Users for ranking
+                                                                                                                                                                                                                                          const User = mongoose.model("User", {
+                                                                                                                                                                                                                                            username: String,
+                                                                                                                                                                                                                                              points: { type: Number, default: 0 },
+                                                                                                                                                                                                                                                clan: String
+                                                                                                                                                                                                                                                });
+
+                                                                                                                                                                                                                                                // Auctions
+                                                                                                                                                                                                                                                const Auction = mongoose.model("Auction", {
+                                                                                                                                                                                                                                                  item: String,
+                                                                                                                                                                                                                                                    highestBid: { type: Number, default: 0 },
+                                                                                                                                                                                                                                                      highestBidder: String,
+                                                                                                                                                                                                                                                        endTime: Date
+                                                                                                                                                                                                                                                        });
+
+                                                                                                                                                                                                                                                        // Clans
+                                                                                                                                                                                                                                                        const Clan = mongoose.model("Clan", {
+                                                                                                                                                                                                                                                          name: String,
+                                                                                                                                                                                                                                                            members: [String]
+                                                                                                                                                                                                                                                            });
+
+                                                                                                                                                                                                                                                            // ==================== ROUTES ====================
+
+                                                                                                                                                                                                                                                            // Register user
+                                                                                                                                                                                                                                                            app.post("/register", async (req, res) => {
+                                                                                                                                                                                                                                                              const user = await User.create({ username: req.body.username });
+                                                                                                                                                                                                                                                                res.json(user);
+                                                                                                                                                                                                                                                                });
+
+                                                                                                                                                                                                                                                                // Leaderboard
+                                                                                                                                                                                                                                                                app.get("/leaderboard", async (req, res) => {
+                                                                                                                                                                                                                                                                  const users = await User.find().sort({ points: -1 });
+                                                                                                                                                                                                                                                                    res.json(users);
+                                                                                                                                                                                                                                                                    });
+
+                                                                                                                                                                                                                                                                    // Create clan
+                                                                                                                                                                                                                                                                    app.post("/clan", async (req, res) => {
+                                                                                                                                                                                                                                                                      const clan = await Clan.create({ name: req.body.name, members: [] });
+                                                                                                                                                                                                                                                                        res.json(clan);
+                                                                                                                                                                                                                                                                        });
+
+                                                                                                                                                                                                                                                                        // Join clan
+                                                                                                                                                                                                                                                                        app.post("/clan/join", async (req, res) => {
+                                                                                                                                                                                                                                                                          const clan = await Clan.findOne({ name: req.body.clan });
+                                                                                                                                                                                                                                                                            clan.members.push(req.body.username);
+                                                                                                                                                                                                                                                                              await clan.save();
+                                                                                                                                                                                                                                                                                res.json(clan);
+                                                                                                                                                                                                                                                                                });
+
+                                                                                                                                                                                                                                                                                // Create auction
+                                                                                                                                                                                                                                                                                app.post("/auction", async (req, res) => {
+                                                                                                                                                                                                                                                                                  const auction = await Auction.create({
+                                                                                                                                                                                                                                                                                      item: req.body.item,
+                                                                                                                                                                                                                                                                                          endTime: new Date(Date.now() + 60000)
+                                                                                                                                                                                                                                                                                            });
+                                                                                                                                                                                                                                                                                              res.json(auction);
+                                                                                                                                                                                                                                                                                              });
+
+                                                                                                                                                                                                                                                                                              // Place bid
+                                                                                                                                                                                                                                                                                              app.post("/bid", async (req, res) => {
+                                                                                                                                                                                                                                                                                                const auction = await Auction.findById(req.body.id);
+                                                                                                                                                                                                                                                                                                  if (req.body.amount > auction.highestBid) {
+                                                                                                                                                                                                                                                                                                      auction.highestBid = req.body.amount;
+                                                                                                                                                                                                                                                                                                          auction.highestBidder = req.body.username;
+                                                                                                                                                                                                                                                                                                              await auction.save();
+                                                                                                                                                                                                                                                                                                                }
+                                                                                                                                                                                                                                                                                                                  res.json(auction);
+                                                                                                                                                                                                                                                                                                                  });
+
+                                                                                                                                                                                                                                                                                                                  // ==================== LIVE CHAT ====================
+
+                                                                                                                                                                                                                                                                                                                  io.on("connection", (socket) => {
+                                                                                                                                                                                                                                                                                                                    socket.on("chatMessage", (msg) => {
+                                                                                                                                                                                                                                                                                                                        io.emit("chatMessage", msg);
+                                                                                                                                                                                                                                                                                                                          });
+                                                                                                                                                                                                                                                                                                                          });
+
+                                                                                                                                                                                                                                                                                                                          // ==================== START SERVER ====================
+
+                                                                                                                                                                                                                                                                                                                          server.listen(3000, () => {
+                                                                                                                                                                                                                                                                                                                            console.log("Server running on http://localhost:3000");
+                                                                                                                                                                                                                                                                                                                            });npm install
+                                                                                                                                                                                                                                                                                                                            node server.js<audio id="bgMusic" loop>
+                                                                                                                                                                                                                                                                                                                              <source src="music.mp3" type="audio/mpeg">
+                                                                                                                                                                                                                                                                                                                              </audio>
+
+                                                                                                                                                                                                                                                                                                                              <script>
+                                                                                                                                                                                                                                                                                                                              const music = document.getElementById("bgMusic");
+                                                                                                                                                                                                                                                                                                                              music.volume = 0;
+
+                                                                                                                                                                                                                                                                                                                              document.addEventListener("click", function startMusic() {
+                                                                                                                                                                                                                                                                                                                                music.play();
+                                                                                                                                                                                                                                                                                                                                  fadeIn();
+                                                                                                                                                                                                                                                                                                                                    document.removeEventListener("click", startMusic);
+                                                                                                                                                                                                                                                                                                                                    });
+
+                                                                                                                                                                                                                                                                                                                                    function fadeIn() {
+                                                                                                                                                                                                                                                                                                                                      let vol = 0;
+                                                                                                                                                                                                                                                                                                                                        let interval = setInterval(() => {
+                                                                                                                                                                                                                                                                                                                                            if (vol < 1) {
+                                                                                                                                                                                                                                                                                                                                                  vol += 0.05;
+                                                                                                                                                                                                                                                                                                                                                        music.volume = vol;
+                                                                                                                                                                                                                                                                                                                                                            } else {
+                                                                                                                                                                                                                                                                                                                                                                  clearInterval(interval);
+                                                                                                                                                                                                                                                                                                                                                                      }
+                                                                                                                                                                                                                                                                                                                                                                        }, 200);
+                                                                                                                                                                                                                                                                                                                                                                        }
+                                                                                                                                                                                                                                                                                                                                                                        </script>
+}
